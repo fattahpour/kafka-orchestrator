@@ -1,0 +1,87 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka1:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka1
+    ports:
+      - "29092:9092" # Host access to broker 1
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_NUM_PARTITIONS: 1 # Default for auto-created topics, can be overridden per topic
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: kafka1
+      JMX_PORT: 9999 # For compatibility with some images
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:19092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 2 # Should be <= number of brokers
+      CONFLUENT_METRICS_ENABLE: 'true' # Ensure Confluent Metrics Reporter is enabled
+
+  kafka2:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka2
+    ports:
+      - "29093:19092" # Host access to broker 2
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:19092,PLAINTEXT_HOST://localhost:29093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,PLAINTEXT_HOST://0.0.0.0:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_NUM_PARTITIONS: 1 # Default for auto-created topics, can be overridden per topic
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_JMX_PORT: 9998
+      KAFKA_JMX_HOSTNAME: kafka2
+      JMX_PORT: 9998 # For compatibility with some images
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:19092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 2 # Should be <= number of brokers
+      CONFLUENT_METRICS_ENABLE: 'true' # Ensure Confluent Metrics Reporter is enabled
+
+prometheus:
+  image: prom/prometheus:latest
+  container_name: prometheus
+  ports:
+    - "9090:9090"
+  volumes:
+    - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  depends_on:
+    - kafka1
+    - kafka2
+
+grafana:
+  image: grafana/grafana:latest
+  container_name: grafana
+  ports:
+    - "3000:3000"
+  depends_on:
+    - prometheus
+  environment:
+    GF_SECURITY_ADMIN_PASSWORD: admin
+    GF_USERS_ALLOW_SIGN_UP: "false"
+  # volumes:
+    # - grafana-storage:/var/lib/grafana
+
+# volumes:
+#   grafana-storage: {}
