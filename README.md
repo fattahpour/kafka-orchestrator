@@ -1,8 +1,8 @@
-This project provides an automated and scalable Apache Kafka cluster management setup using Docker Compose. It leverages KRaft mode for a Zookeeper-less architecture and uses `bitnami/kafka` Docker images, tailored for local containerized environments and testing. Monitoring is provided via Prometheus, Grafana, and a Kafka exporter.
+This project provides an automated and scalable Apache Kafka cluster management setup using Docker Compose. It leverages KRaft mode for a Zookeeper-less architecture and uses `bitnami/kafka` Docker images, tailored for local containerized environments and testing. Monitoring and management are provided via Prometheus, Grafana, a Kafka exporter, and Kafka UI.
 
 # Kafka Docker Compose Setup (KRaft Mode with Bitnami Images)
 
-This project provides a Docker Compose setup for running a Zookeeper-less Apache Kafka cluster locally using KRaft mode with `bitnami/kafka` images. It includes monitoring via Prometheus, Grafana, and a Kafka exporter.
+This project provides a Docker Compose setup for running a Zookeeper-less Apache Kafka cluster locally using KRaft mode with `bitnami/kafka` images. It includes monitoring via Prometheus, Grafana, a Kafka exporter, and Kafka UI.
 
 ## Prerequisites
 
@@ -43,14 +43,14 @@ Key KRaft configuration parameters (found in `docker-compose.yml` under each Kaf
     ```bash
     docker-compose up -d
     ```
-    This command will start the Kafka brokers, the Kafka exporter, Prometheus, and Grafana services in detached mode. Zookeeper is not used.
+    This command will start the Kafka brokers along with the Kafka exporter, Prometheus, Grafana, and Kafka UI services in detached mode. Zookeeper is not used.
 
 3.  **Verify the services are running:**
     You can check the status of the containers using:
     ```bash
     docker-compose ps
     ```
-    You should see `kafka1`, `kafka2`, `kafka-exporter`, `prometheus`, and `grafana` containers running.
+    You should see `kafka1`, `kafka2`, `kafka-exporter`, `prometheus`, `grafana`, and `kafka-ui` containers running.
 
 ## Accessing Kafka
 
@@ -138,12 +138,14 @@ This setup runs two Kafka brokers (`kafka1`, `kafka2`), both acting as controlle
 *   **Grafana:** `http://localhost:3000` (admin/admin)
     *   Add Prometheus data source: URL `http://prometheus:9090`.
     *   Import Kafka dashboards (e.g., from Grafana Labs, search for Bitnami Kafka or JMX ones).
+*   **Kafka UI:** `http://localhost:8080`
 
 ## Data Persistence
 
-Kafka message data is persisted in Docker named volumes:
+Kafka message data and Grafana dashboards are persisted in Docker named volumes:
 *   `kafka1_data` for `kafka1` (mounted at `/bitnami/kafka`)
 *   `kafka2_data` for `kafka2` (mounted at `/bitnami/kafka`)
+*   `grafana-storage` for Grafana (mounted at `/var/lib/grafana`)
 These volumes are not deleted when you run `docker-compose down` unless you use the `-v` flag.
 
 ## Networking

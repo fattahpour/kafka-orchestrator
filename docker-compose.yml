@@ -118,15 +118,29 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
-    # volumes:
-    #   - grafana-storage:/var/lib/grafana
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - kafkanet
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka1
+      - kafka2
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka1:9092,kafka2:19092"
     networks:
       - kafkanet
 
 volumes:
   kafka1_data: {}
   kafka2_data: {}
-  # grafana-storage: {}
+  grafana-storage: {}
 
 networks: # Define a custom network
   kafkanet:
