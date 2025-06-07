@@ -1,87 +1,119 @@
 version: '3.8'
-services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
 
+services:
   kafka1:
-    image: confluentinc/cp-kafka:latest
+    image: bitnami/kafka:latest # Changed image
     container_name: kafka1
     ports:
-      - "29092:9092" # Host access to broker 1
-    depends_on:
-      - zookeeper
+      - "29092:29092" # External client access for kafka1
+      # JMX port for kafka1 if KAFKA_JMX_PORT is respected, or if it's the default.
+      # Bitnami might use a different default JMX port like 9995. Let's try to set it.
+      - "9999:9999"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
-      KAFKA_NUM_PARTITIONS: 1 # Default for auto-created topics, can be overridden per topic
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # KRaft settings
+      KAFKA_CFG_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_CLUSTER_ID: 'MkU0QUVnRlJ0U2U5N2RzM0xMQU12Zw=='
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9091,2@kafka2:19094' # NodeID@Host:ControllerPort
+      KAFKA_CFG_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:29092'
+      KAFKA_CFG_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka1:9092,EXTERNAL://localhost:29092'
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+
+      # General Kafka settings
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2 # Important for multi-broker KRaft
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2 # Important for multi-broker KRaft
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_CFG_NUM_PARTITIONS: 1 # Default for auto-created topics
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+      # JMX settings for Prometheus (Bitnami specific might be different, KAFKA_JMX_PORT is a common convention)
       KAFKA_JMX_PORT: 9999
-      KAFKA_JMX_HOSTNAME: kafka1
-      JMX_PORT: 9999 # For compatibility with some images
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:19092
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 2 # Should be <= number of brokers
-      CONFLUENT_METRICS_ENABLE: 'true' # Ensure Confluent Metrics Reporter is enabled
+      # Bitnami might require KAFKA_JMX_OPTS for non-default port:
+      # KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9999"
+      # For now, assume KAFKA_JMX_PORT works or 9999 is a sensible default if JMX is on.
+
+      # Disable Zookeeper connect if the image needs it explicitly for KRaft
+      # KAFKA_ZOOKEEPER_CONNECT_ENABLED: 'false' # Specific to some images like Strimzi, Bitnami might not need it.
+                                             # Bitnami typically auto-detects KRaft if no ZK vars are set.
+      # Remove KAFKA_CFG_ZOOKEEPER_CONNECT if it was there.
+    volumes:
+      - kafka1_data:/bitnami/kafka # Persist Kafka data for kafka1
+    networks:
+      - kafkanet
 
   kafka2:
-    image: confluentinc/cp-kafka:latest
+    image: bitnami/kafka:latest # Changed image
     container_name: kafka2
     ports:
-      - "29093:19092" # Host access to broker 2
-    depends_on:
-      - zookeeper
+      - "29093:29093" # External client access for kafka2
+      - "9998:9998"   # JMX port for kafka2
     environment:
-      KAFKA_BROKER_ID: 2
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:19092,PLAINTEXT_HOST://localhost:29093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,PLAINTEXT_HOST://0.0.0.0:29093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
-      KAFKA_NUM_PARTITIONS: 1 # Default for auto-created topics, can be overridden per topic
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # KRaft settings
+      KAFKA_CFG_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CFG_NODE_ID: 2
+      KAFKA_CFG_CLUSTER_ID: 'MkU0QUVnRlJ0U2U5N2RzM0xMQU12Zw=='
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@kafka1:9091,2@kafka2:19094' # NodeID@Host:ControllerPort
+      KAFKA_CFG_LISTENERS: 'PLAINTEXT://0.0.0.0:19092,CONTROLLER://0.0.0.0:19094,EXTERNAL://0.0.0.0:29093'
+      KAFKA_CFG_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka2:19092,EXTERNAL://localhost:29093'
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+
+      # General Kafka settings
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_CFG_NUM_PARTITIONS: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+      # JMX settings
       KAFKA_JMX_PORT: 9998
-      KAFKA_JMX_HOSTNAME: kafka2
-      JMX_PORT: 9998 # For compatibility with some images
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:19092
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 2 # Should be <= number of brokers
-      CONFLUENT_METRICS_ENABLE: 'true' # Ensure Confluent Metrics Reporter is enabled
 
-prometheus:
-  image: prom/prometheus:latest
-  container_name: prometheus
-  ports:
-    - "9090:9090"
-  volumes:
-    - ./prometheus.yml:/etc/prometheus/prometheus.yml
-  depends_on:
-    - kafka1
-    - kafka2
+      # KAFKA_ZOOKEEPER_CONNECT_ENABLED: 'false'
+    volumes:
+      - kafka2_data:/bitnami/kafka # Persist Kafka data for kafka2
+    networks:
+      - kafkanet
+    depends_on: # Ensure kafka1 is at least started for quorum voter reference, though true dependency is more complex in KRaft
+      - kafka1
 
-grafana:
-  image: grafana/grafana:latest
-  container_name: grafana
-  ports:
-    - "3000:3000"
-  depends_on:
-    - prometheus
-  environment:
-    GF_SECURITY_ADMIN_PASSWORD: admin
-    GF_USERS_ALLOW_SIGN_UP: "false"
-  # volumes:
-    # - grafana-storage:/var/lib/grafana
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on: # Depends on Kafka brokers being available
+      - kafka1
+      - kafka2
+    networks:
+      - kafkanet
 
-# volumes:
-#   grafana-storage: {}
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    # volumes:
+    #   - grafana-storage:/var/lib/grafana
+    networks:
+      - kafkanet
+
+volumes:
+  kafka1_data: {}
+  kafka2_data: {}
+  # grafana-storage: {}
+
+networks: # Define a custom network
+  kafkanet:
+    driver: bridge
