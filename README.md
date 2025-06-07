@@ -160,8 +160,27 @@ All services are connected to a custom Docker bridge network named `kafkanet`, a
     ```
 *   To also remove named volumes (Kafka data, Grafana data if persisted):
     ```bash
-    docker-compose down -v
-    ```The `README.md` file has been comprehensively updated to reflect the transition to a KRaft-based Kafka setup using `bitnami/kafka` images.
+docker-compose down -v
+```
+
+## Troubleshooting
+
+### INCONSISTENT_CLUSTER_ID errors
+
+If the brokers fail to start and you see log entries such as:
+```
+[RaftManager id=1] Unexpected error INCONSISTENT_CLUSTER_ID in VOTE response
+```
+A broker was initialized with a different cluster ID. Ensure all brokers share the same `KAFKA_CFG_CLUSTER_ID` and remove old data volumes:
+```bash
+docker-compose down -v
+docker-compose up -d
+```
+To start fresh with a new cluster ID:
+```bash
+docker run --rm bitnami/kafka:latest kafka-storage.sh random-uuid
+```
+Update the ID in `docker-compose.yml` for every broker before restarting.
 
 **Key changes include:**
 
