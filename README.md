@@ -136,8 +136,8 @@ This setup runs two Kafka brokers (`kafka1`, `kafka2`), both acting as controlle
     *   Targets: "Status" -> "Targets". Scrapes `kafka1:9999`, `kafka2:9998`, and `kafka-exporter:9308`.
 *   **Kafka Exporter:** Exposes metrics on `http://localhost:9308` for Prometheus.
 *   **Grafana:** `http://localhost:3000` (admin/admin)
-    *   Comes preconfigured with a Prometheus data source pointing to `http://prometheus:9090`.
-    *   A sample **Kafka Overview** dashboard is automatically imported and available after startup.
+    *   Add Prometheus data source: URL `http://prometheus:9090`.
+    *   Import Kafka dashboards (e.g., from Grafana Labs, search for Bitnami Kafka or JMX ones).
 
 ## Data Persistence
 
