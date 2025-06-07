@@ -81,6 +81,20 @@ services:
     depends_on: # Ensure kafka1 is at least started for quorum voter reference, though true dependency is more complex in KRaft
       - kafka1
 
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: kafka-exporter
+    ports:
+      - "9308:9308"
+    command:
+      - '--kafka.server=kafka1:9092'
+      - '--kafka.server=kafka2:19092'
+    depends_on:
+      - kafka1
+      - kafka2
+    networks:
+      - kafkanet
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
