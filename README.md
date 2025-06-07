@@ -1,8 +1,8 @@
-This project provides an automated and scalable Apache Kafka cluster management setup using Docker Compose. It leverages KRaft mode for a Zookeeper-less architecture and uses `bitnami/kafka` Docker images, tailored for local containerized environments and testing. Monitoring is provided via Prometheus, Grafana, and a Kafka exporter.
+This project provides an automated and scalable Apache Kafka cluster management setup using Docker Compose. It leverages KRaft mode for a Zookeeper-less architecture and uses `bitnami/kafka` Docker images, tailored for local containerized environments and testing. Monitoring is provided via Prometheus, Grafana, the Kafka exporter, and Kafka UI.
 
 # Kafka Docker Compose Setup (KRaft Mode with Bitnami Images)
 
-This project provides a Docker Compose setup for running a Zookeeper-less Apache Kafka cluster locally using KRaft mode with `bitnami/kafka` images. It includes monitoring via Prometheus, Grafana, and a Kafka exporter.
+This project provides a Docker Compose setup for running a Zookeeper-less Apache Kafka cluster locally using KRaft mode with `bitnami/kafka` images. It includes monitoring via Prometheus, Grafana, the Kafka exporter, and Kafka UI.
 
 ## Prerequisites
 
@@ -43,14 +43,14 @@ Key KRaft configuration parameters (found in `docker-compose.yml` under each Kaf
     ```bash
     docker-compose up -d
     ```
-    This command will start the Kafka brokers, the Kafka exporter, Prometheus, and Grafana services in detached mode. Zookeeper is not used.
+    This command will start the Kafka brokers, the Kafka exporter, Prometheus, Grafana, and Kafka UI services in detached mode. Zookeeper is not used.
 
 3.  **Verify the services are running:**
     You can check the status of the containers using:
     ```bash
     docker-compose ps
     ```
-    You should see `kafka1`, `kafka2`, `kafka-exporter`, `prometheus`, and `grafana` containers running.
+    You should see `kafka1`, `kafka2`, `kafka-exporter`, `prometheus`, `grafana`, and `kafka-ui` containers running.
 
 ## Accessing Kafka
 
@@ -138,6 +138,7 @@ This setup runs two Kafka brokers (`kafka1`, `kafka2`), both acting as controlle
 *   **Grafana:** `http://localhost:3000` (admin/admin)
     *   Comes preconfigured with a Prometheus data source pointing to `http://prometheus:9090`.
     *   A sample **Kafka Overview** dashboard is automatically imported and available after startup.
+*   **Kafka UI:** `http://localhost:8080` (no authentication)
 
 ## Data Persistence
 
@@ -159,38 +160,5 @@ All services are connected to a custom Docker bridge network named `kafkanet`, a
 *   To also remove named volumes (Kafka data, Grafana data if persisted):
     ```bash
     docker-compose down -v
-    ```The `README.md` file has been comprehensively updated to reflect the transition to a KRaft-based Kafka setup using `bitnami/kafka` images.
+```
 
-**Key changes include:**
-
-1.  **Introduction/Overview:** Updated to mention KRaft, Zookeeper-less architecture, and `bitnami/kafka` images.
-2.  **Prerequisites:** Simplified, as Zookeeper is no longer a component.
-3.  **KRaft-based Architecture Overview:** A new section was added explaining the core concepts of KRaft and detailing the key `KAFKA_CFG_` environment variables used in the `docker-compose.yml` for configuring KRaft mode, listeners, and replication.
-4.  **Getting Started:**
-    *   Instructions for regenerating `KAFKA_CFG_CLUSTER_ID` (if needed) were added.
-    *   The list of services to verify running now correctly omits Zookeeper.
-5.  **Accessing Kafka:**
-    *   Updated to reflect the `EXTERNAL` (host access) and `PLAINTEXT` (internal Docker network) listeners for the Bitnami KRaft setup.
-    *   Controller listener ports are also mentioned for clarity.
-    *   Bootstrap server strings for both host and internal Docker network access are provided.
-6.  **Managing Topics and Partitions:**
-    *   Updated environment variable names to `KAFKA_CFG_...`.
-    *   Clarified that `kafka-topics.sh` is available in Bitnami images (often in PATH).
-    *   The example for creating topics now uses `my-kraft-topic`.
-    *   Internal bootstrap server usage within `exec` is confirmed as still valid.
-7.  **Scaling and Configuration (KRaft Mode):**
-    *   This section was significantly rewritten to explain scaling in a KRaft context.
-    *   Emphasized the critical role of `KAFKA_CFG_CONTROLLER_QUORUM_VOTERS` and the need to update it on all controller nodes.
-    *   Provided a more detailed example for adding a `kafka3` node, including considerations for its controller listener port and updating replication factors.
-8.  **Monitoring:**
-    *   JMX scrape targets for Prometheus (`kafka1:9999`, `kafka2:9998`, and the `kafka-exporter` at `9308`) remain the same, but the surrounding text is consistent with the Bitnami setup.
-9.  **Data Persistence:**
-    *   A new section was added explaining that Kafka data is persisted in Docker named volumes (`kafka1_data`, `kafka2_data`) mounted at `/bitnami/kafka` (the default data directory for Bitnami Kafka images).
-10. **Networking:**
-    *   A new note was added about the `kafkanet` custom Docker network.
-11. **General Cleanup:**
-    *   All references to Zookeeper and Confluent-specific metric reporter variables were removed.
-    *   Environment variables were updated to use the `KAFKA_CFG_` prefix as required by Bitnami images.
-    *   Ensured overall consistency in naming, port conventions, and terminology.
-
-The `README.md` should now accurately guide users in understanding, running, and managing this KRaft-based Kafka setup.
