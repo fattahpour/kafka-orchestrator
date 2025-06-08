@@ -2,6 +2,14 @@ version: '3.8'
 
 services:
 
+  jmx-exporter-init:
+    image: curlimages/curl:latest
+    command: >
+      sh -c 'curl -L -o /opt/jmx-exporter/jmx_prometheus_javaagent.jar https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.20.0/jmx_prometheus_javaagent-0.20.0.jar'
+    volumes:
+      - ./jmx-exporter:/opt/jmx-exporter
+    restart: "no"
+
   kafka-1:
     image: apache/kafka:4.0.0
     container_name: kafka-1
@@ -27,6 +35,8 @@ services:
     volumes:
       - kafka-1-data:/var/lib/kafka/data
       - ./jmx-exporter:/opt/jmx-exporter
+    depends_on:
+      - jmx-exporter-init
 
   kafka-2:
     image: apache/kafka:4.0.0
@@ -53,6 +63,8 @@ services:
     volumes:
       - kafka-2-data:/var/lib/kafka/data
       - ./jmx-exporter:/opt/jmx-exporter
+    depends_on:
+      - jmx-exporter-init
 
   kafka-3:
     image: apache/kafka:4.0.0
@@ -79,6 +91,8 @@ services:
     volumes:
       - kafka-3-data:/var/lib/kafka/data
       - ./jmx-exporter:/opt/jmx-exporter
+    depends_on:
+      - jmx-exporter-init
 
   prometheus:
     image: prom/prometheus:latest
