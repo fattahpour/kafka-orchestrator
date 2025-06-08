@@ -1,0 +1,15 @@
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+rules:
+  - pattern: 'kafka.server<type=(.+), name=(.+)PerSec, topic=(.+)><>OneMinuteRate'
+    name: kafka_server_$1_$2_total
+    labels:
+      topic: "$3"
+    type: COUNTER
+  - pattern: 'kafka.server<type=(.+), name=(.+)><>Value'
+    name: kafka_server_$1_$2
+    type: GAUGE
+  - pattern: 'kafka.server<type=(.+), name=(.+)><>Count'
+    name: kafka_server_$1_$2_total
+    type: COUNTER

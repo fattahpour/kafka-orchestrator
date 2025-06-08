@@ -2,6 +2,14 @@ version: '3.8'
 
 services:
 
+  jmx-exporter-init:
+    image: curlimages/curl:latest
+    command: >
+      sh -c 'curl -L -o /opt/jmx-exporter/jmx_prometheus_javaagent.jar https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.20.0/jmx_prometheus_javaagent-0.20.0.jar'
+    volumes:
+      - ./jmx-exporter:/opt/jmx-exporter
+    restart: "no"
+
   kafka-1:
     image: apache/kafka:4.0.0
     container_name: kafka-1
@@ -21,12 +29,14 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-      KAFKA_JMX_PORT: 7071
-      KAFKA_JMX_HOSTNAME: kafka-1
+      # Expose metrics via the JMX Exporter. We do not run the built-in JMX
+      # remote server to avoid port conflicts.
       KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=7071:/opt/jmx-exporter/kafka.yml"
     volumes:
       - kafka-1-data:/var/lib/kafka/data
       - ./jmx-exporter:/opt/jmx-exporter
+    depends_on:
+      - jmx-exporter-init
 
   kafka-2:
     image: apache/kafka:4.0.0
@@ -47,12 +57,12 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-      KAFKA_JMX_PORT: 7072
-      KAFKA_JMX_HOSTNAME: kafka-2
       KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=7072:/opt/jmx-exporter/kafka.yml"
     volumes:
       - kafka-2-data:/var/lib/kafka/data
       - ./jmx-exporter:/opt/jmx-exporter
+    depends_on:
+      - jmx-exporter-init
 
   kafka-3:
     image: apache/kafka:4.0.0
@@ -73,12 +83,12 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-      KAFKA_JMX_PORT: 7073
-      KAFKA_JMX_HOSTNAME: kafka-3
       KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=7073:/opt/jmx-exporter/kafka.yml"
     volumes:
       - kafka-3-data:/var/lib/kafka/data
       - ./jmx-exporter:/opt/jmx-exporter
+    depends_on:
+      - jmx-exporter-init
 
   prometheus:
     image: prom/prometheus:latest
