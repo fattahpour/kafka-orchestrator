@@ -29,8 +29,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-      KAFKA_JMX_PORT: 7071
-      KAFKA_JMX_HOSTNAME: kafka-1
+      # Expose metrics via the JMX Exporter. We do not run the built-in JMX
+      # remote server to avoid port conflicts.
       KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=7071:/opt/jmx-exporter/kafka.yml"
     volumes:
       - kafka-1-data:/var/lib/kafka/data
@@ -57,8 +57,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-      KAFKA_JMX_PORT: 7072
-      KAFKA_JMX_HOSTNAME: kafka-2
       KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=7072:/opt/jmx-exporter/kafka.yml"
     volumes:
       - kafka-2-data:/var/lib/kafka/data
@@ -85,8 +83,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-      KAFKA_JMX_PORT: 7073
-      KAFKA_JMX_HOSTNAME: kafka-3
       KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent.jar=7073:/opt/jmx-exporter/kafka.yml"
     volumes:
       - kafka-3-data:/var/lib/kafka/data
