@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka-1:7071', 'kafka-2:7072', 'kafka-3:7073']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
